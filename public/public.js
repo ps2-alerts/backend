@@ -3,9 +3,12 @@ var worlds = [];
 var updateAlert = function(world){
 	var row = '#world-' + world.id;
 	if(world.active){
+		$(row).addClass('active');
 		$(row + ' .state').html('Active alert!');
 	} else {
 		var state = world.state == 'online' ? 'no alert' : world.state;
+
+		$(row).removeClass();
 		$(row + ' .remaining').html(state.charAt(0).toUpperCase() + state.slice(1));
 	}
 }

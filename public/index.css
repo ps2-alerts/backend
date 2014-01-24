@@ -6,6 +6,14 @@ tr {
 	background: #eee;
 }
 
+td.state {
+	color: #888;
+}
+
+tr.active td.state {
+	color: #f00;
+}
+
 tr:first-child td {
 	background: #bbb !important;
 }
