@@ -24,6 +24,7 @@ sockets.on('connection', function(socket){
 	if(clients.length == 1)
 		interval = setInterval(update, 30000);
 
+	socket.send(JSON.stringify(alerts.init()));
 	socket.on('close', function(){
 		if(clients.length == 0)
 			clearInterval(interval);

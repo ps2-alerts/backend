@@ -66,6 +66,13 @@ module.exports = function(){
 		});
 	}
 
+	self.init = function(){
+		return {
+			init: true,
+			worlds: worlds
+		}
+	}
+
 	for(var index in worlds){
 		var world = worlds[index];
 		world.id = index;
