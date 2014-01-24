@@ -8,6 +8,8 @@ server.listen(process.env.PORT);
 var wss = require('ws').Server;
 var sockets = new wss({server: server});
 
+var alerts = require('./alerts.js')();
+
 sockets.on('connection', function(socket){
 
 });
