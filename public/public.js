@@ -38,7 +38,7 @@ var updateAlert = function(world){
 		$(row).removeClass();
 		$(row + ' .type').html('');
 		$(row + ' .zone').html('');
-		$(row + ' .remaining').html(state.charAt(0).toUpperCase() + state.slice(1));
+		$(row + ' .state').html(state.charAt(0).toUpperCase() + state.slice(1));
 	}
 }
 
