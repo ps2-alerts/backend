@@ -7,6 +7,10 @@ server.listen(process.env.PORT || 5000);
 
 var wss = require('ws').Server;
 var sockets = new wss({server: server});
+sockets.broadcast = function(data){
+	for(var index = 1; index <= this.clients.length; index++)
+		this.clients[index - 1].send(data);
+}
 
 var alerts = require('./alerts.js')();
 
