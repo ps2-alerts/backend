@@ -14,6 +14,18 @@ sockets.broadcast = function(data){
 
 var alerts = require('./alerts.js')();
 
-sockets.on('connection', function(socket){
+var interval;
+var update = function(){
+	sockets.broadcast({ping: true});
+}
 
+sockets.on('connection', function(socket){
+	var clients = this.clients;
+	if(clients.length == 1)
+		interval = setInterval(update, 30000);
+
+	socket.on('close', function(){
+		if(clients.length == 0)
+			clearInterval(interval);
+	});
 });
