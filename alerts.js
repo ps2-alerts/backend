@@ -9,6 +9,37 @@ var worlds = {
 	25: {name: 'Briggs'}
 }
 
+var events = [
+	{zone: 2, type: 0},
+	{zone: 8, type: 0},
+	{zone: 6, type: 0},
+	{zone: 0, type: 1},
+	{zone: 0, type: 2},
+	{zone: 0, type: 3},
+	{zone: 6, type: 1},
+	{zone: 6, type: 2},
+	{zone: 6, type: 3},
+	{zone: 2, type: 1},
+	{zone: 2, type: 2},
+	{zone: 2, type: 3},
+	{zone: 8, type: 1},
+	{zone: 8, type: 3}
+];
+
+var eventNames = [
+	'Territory',
+	'Bio Labs',
+	'Tech Plants',
+	'Amp Stations'
+];
+
+var zoneNames = {
+	0: 'Global',
+	2: 'Indar',
+	6: 'Amerish',
+	8: 'Esamir'
+}
+
 var eventIDs = {
 	135: true,
 	136: true,
@@ -61,7 +92,16 @@ module.exports = function(sockets){
 			var eventID = +data.metagame_event_state;
 			if(eventID != world.eventID){
 				if(eventIDs[eventID]){
+					var event = events[+data.metagame_event_id - 1];
 					world.active = true;
+					world.alert = {
+						start: +(data.timestamp + '000'),
+						type: event.type,
+						zone: event.zone,
+						eventName: eventNames[event.type],
+						zoneName: zoneNames[event.zone],
+						duration: (+data.metagame_event_id > 6) ? 1 : 2
+					}
 				} else {
 					world.active = false;
 				}
