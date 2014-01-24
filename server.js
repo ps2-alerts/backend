@@ -12,11 +12,13 @@ sockets.broadcast = function(data){
 		this.clients[index - 1].send(JSON.stringify(data));
 }
 
-var alerts = require('./alerts.js')();
+var alerts = require('./alerts.js')(sockets);
 
 var interval;
 var update = function(){
 	sockets.broadcast({ping: true});
+
+	alerts.update();
 }
 
 sockets.on('connection', function(socket){

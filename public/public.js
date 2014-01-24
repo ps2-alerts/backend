@@ -36,6 +36,14 @@ $(document).ready(function(){
 
 				updateAlert(world);
 			}
+		} else {
+			for(var index = 0; index < worlds.length; index++){
+				var world = worlds[index];
+				if(world.id == data.id){
+					worlds[index] = data;
+					updateAlert(data);
+				}
+			}
 		}
 	}
 });

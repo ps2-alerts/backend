@@ -31,7 +31,7 @@ var query = function(params, callback){
 	});
 }
 
-module.exports = function(){
+module.exports = function(sockets){
 	var self = this;
 	self.update = function(){
 		query('world?c:limit=100', function(result){
@@ -39,6 +39,11 @@ module.exports = function(){
 				var data = result.world_list[index];
 				var world = worlds[+data.world_id];
 				if(world){
+					if(data.state != world.state){
+						world.state = data.state;
+						sockets.broadcast(world);
+					}
+
 					if(data.state == 'online')
 						self.updateWorld(world);
 				}
@@ -62,6 +67,7 @@ module.exports = function(){
 				}
 
 				world.eventID = eventID;
+				sockets.broadcast(world);
 			}
 		});
 	}
