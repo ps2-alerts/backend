@@ -1,0 +1,24 @@
+table {
+	margin: 0 auto;
+}
+
+tr {
+	background: #eee;
+}
+
+tr:first-child td {
+	background: #bbb !important;
+}
+
+tr:nth-child(odd) {
+	background: #ddd;
+}
+
+tr:hover td {
+	background: #ccc;
+}
+
+td {
+	min-width: 100px;
+	cursor: default;
+}
