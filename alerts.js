@@ -9,6 +9,14 @@ var worlds = {
 	25: {name: 'Briggs'}
 }
 
+var eventIDs = {
+	135: true,
+	136: true,
+	137: false,
+	138: false,
+	139: true
+}
+
 var http = require('http');
 var query = function(params, callback){
 	http.get('http://census.soe.com/get/ps2:v2/' + params, function(response){
@@ -39,7 +47,23 @@ module.exports = function(){
 	}
 
 	self.updateWorld = function(world){
+		query('world_event?world_id=' + world.id + '&type=METAGAME', function(result){
+			if(!result.world_event_list)
+				return;
 
+			var data = result.world_event_list[0];
+
+			var eventID = +data.metagame_event_state;
+			if(eventID != world.eventID){
+				if(eventIDs[eventID]){
+					world.active = true;
+				} else {
+					world.active = false;
+				}
+
+				world.eventID = eventID;
+			}
+		});
 	}
 
 	for(var index in worlds){
