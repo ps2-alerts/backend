@@ -26,6 +26,14 @@ tr:hover td {
 	background: #ccc;
 }
 
+tr.active td {
+	background: #fdd;
+}
+
+tr.active:hover td {
+	background: #fbb;
+}
+
 td {
 	min-width: 100px;
 	cursor: default;
