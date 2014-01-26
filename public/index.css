@@ -4,6 +4,17 @@ table {
 
 tr {
 	background: #eee;
+	height: 24px;
+}
+
+td {
+	min-width: 100px;
+	cursor: default;
+	padding: 5px;
+}
+
+td:last-child {
+	min-width: 22px;
 }
 
 td.state {
@@ -34,7 +45,32 @@ tr.active:hover td {
 	background: #fbb;
 }
 
-td {
-	min-width: 100px;
-	cursor: default;
+.vs {
+	background-color: #C660FC;
+}
+
+.nc {
+	background-color: #6687F0;
+}
+
+.tr {
+	background-color: #F04747;
+}
+
+.facility {
+	height: 17px;
+	width: 17px;
+	float: left;
+	border-radius: 25px;
+	margin-right: 8px;
+}
+
+.facility:last-child {
+	margin-right: 0;
+}
+
+.bar {
+	height: 17px;
+	float: left;
+	margin-right: 1px;
 }

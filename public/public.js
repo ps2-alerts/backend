@@ -38,7 +38,39 @@ var updateAlert = function(world){
 		$(row).removeClass();
 		$(row + ' .type').html('');
 		$(row + ' .zone').html('');
+		$(row + ' .details').html('');
 		$(row + ' .state').html(state.charAt(0).toUpperCase() + state.slice(1));
+	}
+}
+
+var updateDetails = function(id, details){
+	var selecter = '#world-' + id + ' .details';
+	$(selecter).html('');
+
+	if(worlds[id].alert.type == 0){
+		$(selecter).append('<div class="bar vs bar-vs-' + id + '" style="width: ' + (216 * details[1]) / 100 + 'px"></div>');
+		$('.bar-vs-' + id).attr('title', Math.floor(details[1]) + '%');
+
+		$(selecter).append('<div class="bar nc bar-nc-' + id + '" style="width: ' + (216 * details[2]) / 100 + 'px"></div>');
+		$('.bar-nc-' + id).attr('title', Math.floor(details[2]) + '%');
+
+		$(selecter).append('<div class="bar tr bar-tr-' + id + '" style="width: ' + (216 * details[3]) / 100 + 'px"></div>');
+		$('.bar-tr-' + id).attr('title', Math.floor(details[3]) + '%');
+	} else {
+		for(var index = 0; index < details[1].length; index++){
+			$(selecter).append('<div class="facility vs facility-vs-' + id + '-' + index + '"></div>');
+			$('.facility-vs-' + id + '-' + index).attr('title', details[1][index]);
+		}
+
+		for(var index = 0; index < details[2].length; index++){
+			$(selecter).append('<div class="facility nc facility-nc-' + id + '-' + index + '"></div>');
+			$('.facility-nc-' + id + '-' + index).attr('title', details[2][index]);
+		}
+
+		for(var index = 0; index < details[3].length; index++){
+			$(selecter).append('<div class="facility tr facility-tr-' + id + '-' + index + '"></div>');
+			$('.facility-tr-' + id + '-' + index).attr('title', details[3][index]);
+		}
 	}
 }
 
@@ -67,14 +99,20 @@ $(document).ready(function(){
 				$('tr:last').append('<td class="state"></td>');
 				$('tr:last').append('<td class="type"></td>');
 				$('tr:last').append('<td class="zone"></td>');
+				$('tr:last').append('<td class="details"></td>');
 
 				updateAlert(world);
+
+				if(world.active)
+					updateDetails(world.id, world.details);
 			}
 
 			array.length = 0;
-		} else if(data.world) {
+		} else if(data.world){
 			worlds[data.world.id] = data.world;
 			updateAlert(data.world);
+		} else if(data.details){
+			updateDetails(data.id, data.details);
 		}
 	}
 
