@@ -80,4 +80,15 @@ tr.active:hover td {
 	height: 17px;
 	float: left;
 	margin-right: 1px;
+	text-align: center;
+}
+
+.bar span {
+	font-size: 14px;
+	display: none;
+	color: #fff;
+}
+
+.bar:hover span {
+	display: inline;
 }

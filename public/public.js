@@ -49,13 +49,16 @@ var updateDetails = function(id, details){
 
 	if(worlds[id].alert.type == 0){
 		$(selecter).append('<div class="bar vs bar-vs-' + id + '" style="width: ' + (216 * details[1]) / 100 + 'px"></div>');
-		$('.bar-vs-' + id).attr('title', Math.floor(details[1]) + '%');
+		if(details[1] > 15)
+			$('.bar-vs-' + id).append('<span>' + Math.floor(details[1]) + '%</span>');
 
 		$(selecter).append('<div class="bar nc bar-nc-' + id + '" style="width: ' + (216 * details[2]) / 100 + 'px"></div>');
-		$('.bar-nc-' + id).attr('title', Math.floor(details[2]) + '%');
+		if(details[2] > 15)
+			$('.bar-nc-' + id).append('<span>' + Math.floor(details[2]) + '%</span>');
 
 		$(selecter).append('<div class="bar tr bar-tr-' + id + '" style="width: ' + (216 * details[3]) / 100 + 'px"></div>');
-		$('.bar-tr-' + id).attr('title', Math.floor(details[3]) + '%');
+		if(details[3] > 15)
+			$('.bar-tr-' + id).append('<span>' + Math.floor(details[3]) + '%</span>');
 	} else {
 		for(var index = 0; index < details[1].length; index++){
 			$(selecter).append('<div class="facility vs facility-vs-' + id + '-' + index + '"></div>');
