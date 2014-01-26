@@ -48,6 +48,24 @@ var eventIDs = {
 	139: true
 }
 
+var facilityData = {
+	1: {
+		2: {2103: 'Allatum', 2104: 'Saurva', 2106: 'Rashnu'},
+		6: {6102: 'Ikanam', 6113: 'Onatha', 6123: 'Xelas'},
+		8: {18022: 'Andvari', 18026: 'Mani', 18028: 'Ymir'}
+	},
+	2: {
+		2: {2101: 'Hvar', 2102: 'Mao', 2108: 'Tawrich'},
+		6: {6103: 'Heyoka', 6112: 'Mekala', 6122: 'Tumas'},
+		8: {18025: 'Eisa'}
+	},
+	3: {
+		2: {2105: 'Peris', 2107: 'Dahaka', 2109: 'Zurvan'},
+		6: {6101: 'Kwahtee', 6111: 'Sungrey', 6121: 'Wokuk'},
+		8: {18023: 'Elli', 18024: 'Freyr', 18027: 'Nott'}
+	}
+};
+
 var http = require('http');
 var query = function(params, callback){
 	http.get('http://census.soe.com/get/ps2:v2/' + params, function(response){
@@ -62,6 +80,22 @@ var query = function(params, callback){
 	});
 }
 
+var queryDetails = function(world, type, zone, callback){
+	var facilities = facilityData[type][zone];
+	query('map?world_id=' + world.id + '&zone_ids=' + zone, function(result){
+		var rows = result.map_list[0].Regions.Row;
+		for(var index = 0; index < rows.length; index++){
+			var row = rows[index].RowData;
+			var facility = facilities[+row.RegionId];
+			if(facility)
+				world.details[+row.FactionId].push(facility);
+		}
+
+		if(callback)
+			callback();
+	});
+}
+
 module.exports = function(sockets){
 	var self = this;
 	self.update = function(){
@@ -72,7 +106,7 @@ module.exports = function(sockets){
 				if(world){
 					if(data.state != world.state){
 						world.state = data.state;
-						sockets.broadcast(world);
+						sockets.broadcast({world: world});
 					}
 
 					if(data.state == 'online')
@@ -104,12 +138,40 @@ module.exports = function(sockets){
 					}
 				} else {
 					world.active = false;
+					delete world.details;
 				}
 
 				world.eventID = eventID;
-				sockets.broadcast(world);
+				sockets.broadcast({world: world});
 			}
+
+			if(world.active)
+				self.updateDetails(world, data);
 		});
+	}
+
+	self.updateDetails = function(world, data){
+		var event = events[+data.metagame_event_id - 1];
+		if(event.type == 0){
+			world.details = {1: +data.faction_vs, 2: +data.faction_nc, 3: +data.faction_tr};
+			sockets.broadcast({details: world.details, id: world.id});
+		} else {
+			world.details = {1: [], 2: [], 3: []};
+
+			if(event.zone == 0){
+				queryDetails(world, event.type, 2, function(){
+					queryDetails(world, event.type, 6, function(){
+						queryDetails(world, event.type, 8, function(){
+							sockets.broadcast({details: world.details, id: world.id});
+						});
+					});
+				});
+			} else {
+				queryDetails(world, event.type, event.zone, function(){
+					sockets.broadcast({details: world.details, id: world.id});
+				});
+			}
+		}
 	}
 
 	self.init = function(){

@@ -67,12 +67,12 @@ $(document).ready(function(){
 
 				updateAlert(world);
 			}
-		} else {
+		} else if(data.world) {
 			for(var index = 0; index < worlds.length; index++){
 				var world = worlds[index];
-				if(world.id == data.id){
-					worlds[index] = data;
-					updateAlert(data);
+				if(world.id == data.world.id){
+					worlds[index] = data.world;
+					updateAlert(data.world);
 				}
 			}
 		}
