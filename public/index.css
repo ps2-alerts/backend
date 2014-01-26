@@ -1,5 +1,8 @@
+@import url(http://fonts.googleapis.com/css?family=Lato:400,700);
+
 table {
 	margin: 0 auto;
+	font-family: 'Lato', sans-serif;
 }
 
 tr {
@@ -23,6 +26,10 @@ td.state {
 
 tr.active td.state {
 	color: #f00;
+}
+
+tr:first-child {
+	font-weight: bold;
 }
 
 tr:first-child td {
