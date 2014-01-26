@@ -44,8 +44,7 @@ var eventIDs = {
 	135: true,
 	136: true,
 	137: false,
-	138: false,
-	139: true
+	138: false
 }
 
 var facilityData = {
