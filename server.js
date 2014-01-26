@@ -1,6 +1,7 @@
-var express = require('express');
-var app = express();
-app.use(express.static(__dirname + '/public'));
+var app = require('express')();
+app.get('/', function(req, res){
+	res.redirect('http://p3lim.github.io/ps2-alerts');
+});
 
 var server = require('http').createServer(app);
 server.listen(process.env.PORT || 5000);
