@@ -41,10 +41,10 @@ var zoneNames = {
 }
 
 var eventIDs = {
-	135: true,
-	136: true,
-	137: false,
-	138: false
+	135: true, // started
+	136: true, // restarted
+	137: false, // canceled
+	138: false // finished
 }
 
 var facilityData = {
