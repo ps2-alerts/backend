@@ -1,10 +1,10 @@
-var worlds = [];
+var worlds = {};
 
 var updateTime = function(){
 	var now = Date.now();
 
-	for(var index = 0; index < worlds.length; index++){
-		var world = worlds[index];
+	for(var id in worlds){
+		var world = worlds[id];
 		if(world.active){
 			var date = new Date(world.alert.start - now);
 			date.setUTCHours(date.getUTCHours() + world.alert.duration);
@@ -49,16 +49,19 @@ $(document).ready(function(){
 		if(data.ping){
 			socket.send('pong');
 		} else if(data.init){
+			worlds = data.worlds;
+
+			var array = [];
 			for(var index in data.worlds){
-				worlds.push(data.worlds[index]);
+				array.push(data.worlds[index]);
 			}
 
-			worlds.sort(function(a, b){
+			array.sort(function(a, b){
 				return a.name > b.name;
 			});
 
-			for(var index = 0; index < worlds.length; index++){
-				var world = worlds[index];
+			for(var index = 0; index < array.length; index++){
+				var world = array[index];
 				$('table').append('<tr id="world-' + world.id + '"></tr>');
 				$('tr:last').append('<td>' + world.name + '</td>');
 				$('tr:last').append('<td class="state"></td>');
@@ -67,14 +70,11 @@ $(document).ready(function(){
 
 				updateAlert(world);
 			}
+
+			array.length = 0;
 		} else if(data.world) {
-			for(var index = 0; index < worlds.length; index++){
-				var world = worlds[index];
-				if(world.id == data.world.id){
-					worlds[index] = data.world;
-					updateAlert(data.world);
-				}
-			}
+			worlds[data.world.id] = data.world;
+			updateAlert(data.world);
 		}
 	}
 
