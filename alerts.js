@@ -68,79 +68,97 @@ var facilityData = {
 var http = require('http');
 var query = function(params, callback){
 	http.get('http://census.soe.com/get/ps2:v2/' + params, function(response){
-		var result = '';
-		response.on('data', function(chunk){
-			result += chunk;
-		});
+		if(response.statusCode != 200){
+			callback({error: {statusCode: response.statusCode, headers: response.headers}}, true);
+		} else {
+			var result = '';
+			response.on('data', function(chunk){
+				result += chunk;
+			});
 
-		response.on('end', function(){
-			callback(JSON.parse(result));
-		});
+			response.on('end', function(){
+				callback(JSON.parse(result));
+			});
+		}
+	}).on('error', function(e){
+		callback({error: e.message}, true);
 	});
 }
 
-var queryDetails = function(id, zone, callback, finalize){
-	query('map?world_id=' + id + '&zone_ids=' + zone, function(result){
-		var rows = result.map_list[0].Regions.Row;
-		for(var index = 0; index < rows.length; index++)
-			callback(rows[index].RowData);
+var queryDetails = function(id, zone, sockets, callback, finalize){
+	query('map?world_id=' + id + '&zone_ids=' + zone, function(result, error){
+		if(error){
+			sockets.broadcast(result);
+		} else {
+			var rows = result.map_list[0].Regions.Row;
+			for(var index = 0; index < rows.length; index++)
+				callback(rows[index].RowData);
 
-		if(finalize)
-			finalize();
+			if(finalize)
+				finalize();
+		}
 	});
 }
 
 module.exports = function(sockets){
 	var self = this;
 	self.update = function(){
-		query('world?c:limit=100', function(result){
-			for(var index = 0; index < result.world_list.length; index++){
-				var data = result.world_list[index];
-				var world = worlds[+data.world_id];
-				if(world){
-					if(data.state != world.state){
-						world.state = data.state;
-						sockets.broadcast({world: world});
-					}
+		query('world?c:limit=100', function(result, error){
+			if(error){
+				sockets.broadcast(result);
+			} else {
+				for(var index = 0; index < result.world_list.length; index++){
+					var data = result.world_list[index];
+					var world = worlds[+data.world_id];
+					if(world){
+						if(data.state != world.state){
+							world.state = data.state;
+							sockets.broadcast({world: world});
+						}
 
-					if(data.state == 'online')
-						self.updateWorld(world);
+						if(data.state == 'online')
+							self.updateWorld(world);
+					}
 				}
 			}
 		});
 	}
 
 	self.updateWorld = function(world){
-		query('world_event?world_id=' + world.id + '&type=METAGAME', function(result){
-			if(!result.world_event_list)
-				return;
+		query('world_event?world_id=' + world.id + '&type=METAGAME', function(result, error){
+			if(error){
+				sockets.broadcast(result);
+			} else {
+				if(!result.world_event_list)
+					return;
 
-			var data = result.world_event_list[0];
+				var data = result.world_event_list[0];
 
-			var eventID = +data.metagame_event_state;
-			if(eventID != world.eventID){
-				if(eventIDs[eventID]){
-					var event = events[+data.metagame_event_id - 1];
-					world.active = true;
-					world.alert = {
-						start: +(data.timestamp + '000'),
-						type: event.type,
-						zone: event.zone,
-						eventName: eventNames[event.type],
-						zoneName: zoneNames[event.zone],
-						duration: (+data.metagame_event_id > 6) ? 1 : 2
+				var eventID = +data.metagame_event_state;
+				if(eventID != world.eventID){
+					if(eventIDs[eventID]){
+						var event = events[+data.metagame_event_id - 1];
+						world.active = true;
+						world.alert = {
+							start: +(data.timestamp + '000'),
+							type: event.type,
+							zone: event.zone,
+							eventName: eventNames[event.type],
+							zoneName: zoneNames[event.zone],
+							duration: (+data.metagame_event_id > 6) ? 1 : 2
+						}
+					} else {
+						world.active = false;
+						delete world.details;
 					}
-				} else {
-					world.active = false;
-					delete world.details;
+
+					world.eventID = eventID;
+					sockets.broadcast({world: world});
 				}
 
-				world.eventID = eventID;
-				sockets.broadcast({world: world});
+				if(world.active)
+					self.updateDetails(world, data);
 			}
-
-			if(world.active)
-				self.updateDetails(world, data);
 		});
 	}
 
@@ -149,13 +167,13 @@ module.exports = function(sockets){
 		if(event.type == 0){
 			var details = {1: [], 2: [], 3: []};
 
-			queryDetails(world.id, 2, function(row){
+			queryDetails(world.id, 2, sockets, function(row){
 				details[+row.FactionId].push(+row.RegionId);
 			}, function(){
-				queryDetails(world.id, 6, function(row){
+				queryDetails(world.id, 6, sockets, function(row){
 					details[+row.FactionId].push(+row.RegionId);
 				}, function(){
-					queryDetails(world.id, 8, function(row){
+					queryDetails(world.id, 8, sockets, function(row){
 						details[+row.FactionId].push(+row.RegionId);
 					}, function(){
 						var total = details[1].length + details[2].length + details[3].length;
@@ -174,17 +192,17 @@ module.exports = function(sockets){
 
 			if(event.zone == 0){
 				var facilities = facilityData[event.type];
-				queryDetails(world.id, 2, function(row){
+				queryDetails(world.id, 2, sockets, function(row){
 					var facility = facilities[2][+row.RegionId];
 					if(facility)
 						world.details[+row.FactionId].push(facility);
 				}, function(){
-					queryDetails(world.id, 6, function(row){
+					queryDetails(world.id, 6, sockets, function(row){
 						var facility = facilities[6][+row.RegionId];
 						if(facility)
 							world.details[+row.FactionId].push(facility);
 					}, function(){
-						queryDetails(world.id, 8, function(row){
+						queryDetails(world.id, 8, sockets, function(row){
 							var facility = facilities[8][+row.RegionId];
 							if(facility)
 								world.details[+row.FactionId].push(facility);
@@ -195,7 +213,7 @@ module.exports = function(sockets){
 				});
 			} else {
 				var facilities = facilityData[event.type][event.zone];
-				queryDetails(world.id, event.zone, function(row){
+				queryDetails(world.id, event.zone, sockets, function(row){
 					var facility = facilities[+row.RegionId];
 					if(facility)
 						world.details[+row.FactionId].push(facility);
