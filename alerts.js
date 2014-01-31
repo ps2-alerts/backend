@@ -67,7 +67,7 @@ var facilityData = {
 
 var http = require('http');
 var query = function(params, callback){
-	http.get('http://census.soe.com/get/ps2:v2/' + params, function(response){
+	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
 		if(response.statusCode != 200){
 			callback({error: {statusCode: response.statusCode, headers: response.headers}}, true);
 		} else {
