@@ -90,12 +90,14 @@ var queryDetails = function(id, zone, sockets, callback, finalize){
 		if(error){
 			sockets.broadcast(result);
 		} else {
-			var rows = result.map_list[0].Regions.Row;
-			for(var index = 0; index < rows.length; index++)
-				callback(rows[index].RowData);
+			if(result.map_list && result.map_list[0]){
+				var rows = result.map_list[0].Regions.Row;
+				for(var index = 0; index < rows.length; index++)
+					callback(rows[index].RowData);
 
-			if(finalize)
-				finalize();
+				if(finalize)
+					finalize();
+			}
 		}
 	});
 }
