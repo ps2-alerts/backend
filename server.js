@@ -26,8 +26,7 @@ var worlds = {
 	10: {name: 'Miller'},
 	11: {name: 'Ceres'},
 	13: {name: 'Cobalt'},
-	17: {name: 'Mattherson'},
-	18: {name: 'Waterson'},
+	17: {name: 'Emerald'},
 	25: {name: 'Briggs'}
 };
 
