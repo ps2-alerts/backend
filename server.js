@@ -20,6 +20,11 @@ wss.broadcast = function(data){
 		this.clients[index - 1].send(JSON.stringify(data));
 };
 
+setInterval(function(){
+	for(var index = 1; index <= wss.clients.length; index++)
+		wss.clients[index - 1].send('ping');
+}, 30000);
+
 var worlds = {
 	1: {alert: {}, details: {1: [], 2: [], 3: []}},  // Connery
 	9: {alert: {}, details: {1: [], 2: [], 3: []}},  // Woodman
