@@ -160,12 +160,6 @@ var updateAlerts = function(data){
 	wss.broadcast({alert: alert, id: id});
 };
 
-var pollAlerts = function(id){
-	query('world_event?type=METAGAME&world_id=' + id, function(result){
-		updateAlerts(result.world_event_list[0]);
-	});
-};
-
 var updateWorldState = function(init){
 	query('world?c:limit=100', function(result){
 		for(var index = 0; index < result.world_list.length; index++){
@@ -180,8 +174,11 @@ var updateWorldState = function(init){
 					wss.broadcast({state: data.state, id: id});
 				}
 
-				if(data.state == 'online' && init)
-					pollAlerts(id);
+				if(data.state == 'online' && init){
+					query('world_event?type=METAGAME&world_id=' + id, function(result){
+						updateAlerts(result.world_event_list[0]);
+					});
+				}
 			}
 		}
 	});
