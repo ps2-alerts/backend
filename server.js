@@ -43,10 +43,6 @@ var alerts = {
 	2: {zone: 8, type: 0},
 	3: {zone: 6, type: 0},
 
-	4: {zone: 0, type: 1},
-	5: {zone: 0, type: 2},
-	6: {zone: 0, type: 3},
-
 	7: {zone: 6, type: 1},
 	8: {zone: 6, type: 2},
 	9: {zone: 6, type: 3},
@@ -67,7 +63,6 @@ var eventNames = [
 ];
 
 var zoneNames = {
-	0: 'Global',
 	2: 'Indar',
 	6: 'Amerish',
 	8: 'Esamir'
@@ -127,65 +122,33 @@ var queryDetails = function(id, zone, callback, finalize){
 	});
 };
 
-var updateDetails = function(world, data){
+var updateAlertDetails = function(world, data){
 	var event = alerts[+data.metagame_event_id];
 	if(event.type == 0){
 		var details = {1: [], 2: [], 3: []};
-
-		queryDetails(world.id, 2, function(row){
+		queryDetails(world.id, event.zone, function(row){
 			details[+row.FactionId].push(+row.RegionId);
 		}, function(){
-			queryDetails(world.id, 6, function(row){
-				details[+row.FactionId].push(+row.RegionId);
-			}, function(){
-				queryDetails(world.id, 8, function(row){
-					details[+row.FactionId].push(+row.RegionId);
-				}, function(){
-					var total = details[1].length + details[2].length + details[3].length;
-					world.details = {
-						1: (details[1].length / total) * 100,
-						2: (details[2].length / total) * 100,
-						3: (details[3].length / total) * 100
-					};
+			var total = details[1].length + details[2].length + details[3].length;
+			world.details = {
+				1: (details[1].length / total) * 100,
+				2: (details[2].length / total) * 100,
+				3: (details[3].length / total) * 100
+			};
 
-					wss.broadcast({details: world.details, id: world.id});
-				});
-			});
+			wss.broadcast({details: world.details, id: world.id});
 		});
 	} else {
 		world.details = {1: [], 2: [], 3: []};
 
-		if(event.zone == 0){
-			var facilities = facilityData[event.type];
-			queryDetails(world.id, 2, function(row){
-				var facility = facilities[2][+row.RegionId];
-				if(facility)
-					world.details[+row.FactionId].push(facility);
-			}, function(){
-				queryDetails(world.id, 6, function(row){
-					var facility = facilities[6][+row.RegionId];
-					if(facility)
-						world.details[+row.FactionId].push(facility);
-				}, function(){
-					queryDetails(world.id, 8, function(row){
-						var facility = facilities[8][+row.RegionId];
-						if(facility)
-							world.details[+row.FactionId].push(facility);
-					}, function(){
-						wss.broadcast({details: world.details, id: world.id});
-					});
-				});
-			});
-		} else {
-			var facilities = facilityData[event.type][event.zone];
-			queryDetails(world.id, event.zone, function(row){
-				var facility = facilities[+row.RegionId];
-				if(facility)
-					world.details[+row.FactionId].push(facility);
-			}, function(){
-				wss.broadcast({details: world.details, id: world.id});
-			});
-		}
+		var facilities = facilityData[event.type][event.zone];
+		queryDetails(world.id, event.zone, function(row){
+			var facility = facilities[+row.RegionId];
+			if(facility)
+				world.details[+row.FactionId].push(facility);
+		}, function(){
+			wss.broadcast({details: world.details, id: world.id});
+		});
 	}
 };
 
