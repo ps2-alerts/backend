@@ -1,37 +1,24 @@
 var app = require('express')();
-app.get('/', function(req, res){
-	res.redirect('http://p3lim.github.io/ps2-alerts');
+app.get('/', function(request, response){
+	response.redirect('http://p3lim.github.io/ps2-alerts');
 });
 
 var http = require('http');
 var server = http.createServer(app);
 server.listen(process.env.PORT || 5000);
 
-var wss = require('ws').Server;
-var sockets = new wss({server: server});
-sockets.broadcast = function(data){
+var WebSocket = require('ws');
+var WebSocketServer = WebSocket.Server;
+
+var wss = new WebSocketServer({server: server});
+wss.on('connection', function(socket){
+	socket.send(JSON.stringify({worlds: worlds}));
+});
+
+wss.broadcast = function(data){
 	for(var index = 1; index <= this.clients.length; index++)
 		this.clients[index - 1].send(JSON.stringify(data));
-}
-
-var interval;
-var update = function(){
-	sockets.broadcast({ping: true});
-
-	update();
-}
-
-sockets.on('connection', function(socket){
-	var clients = this.clients;
-	if(clients.length == 1)
-		interval = setInterval(update, 30000);
-
-	socket.send(JSON.stringify({worlds: worlds}));
-	socket.on('close', function(){
-		if(clients.length == 0)
-			clearInterval(interval);
-	});
-});
+};
 
 var worlds = {
 	1: {name: 'Connery'},
@@ -42,7 +29,7 @@ var worlds = {
 	17: {name: 'Mattherson'},
 	18: {name: 'Waterson'},
 	25: {name: 'Briggs'}
-}
+};
 
 for(var index in worlds){
 	var world = worlds[index];
@@ -51,7 +38,7 @@ for(var index in worlds){
 	world.active = false;
 	world.eventID = 0;
 	world.alert = {};
-}
+};
 
 var events = [
 	{zone: 2, type: 0},
@@ -82,14 +69,14 @@ var zoneNames = {
 	2: 'Indar',
 	6: 'Amerish',
 	8: 'Esamir'
-}
+};
 
 var eventIDs = {
 	135: true, // started
 	136: true, // restarted
 	137: false, // canceled
 	138: false // finished
-}
+};
 
 var facilityData = {
 	1: {
@@ -111,9 +98,9 @@ var facilityData = {
 
 var query = function(params, callback){
 	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
-		if(response.statusCode != 200){
+		if(response.statusCode != 200)
 			callback({error: {statusCode: response.statusCode, headers: response.headers}}, true);
-		} else {
+		else {
 			var result = '';
 			response.on('data', function(chunk){
 				result += chunk;
@@ -126,12 +113,12 @@ var query = function(params, callback){
 	}).on('error', function(e){
 		callback({error: e.message}, true);
 	});
-}
+};
 
-var queryDetails = function(id, zone, sockets, callback, finalize){
+var queryDetails = function(id, zone, callback, finalize){
 	query('map?world_id=' + id + '&zone_ids=' + zone, function(result, error){
 		if(error){
-			sockets.broadcast(result);
+			wss.broadcast(result);
 		} else {
 			if(result.map_list && result.map_list[0]){
 				var rows = result.map_list[0].Regions.Row;
@@ -143,20 +130,20 @@ var queryDetails = function(id, zone, sockets, callback, finalize){
 			}
 		}
 	});
-}
+};
 
 var updateDetails = function(world, data){
 	var event = events[+data.metagame_event_id - 1];
 	if(event.type == 0){
 		var details = {1: [], 2: [], 3: []};
 
-		queryDetails(world.id, 2, sockets, function(row){
+		queryDetails(world.id, 2, function(row){
 			details[+row.FactionId].push(+row.RegionId);
 		}, function(){
-			queryDetails(world.id, 6, sockets, function(row){
+			queryDetails(world.id, 6, function(row){
 				details[+row.FactionId].push(+row.RegionId);
 			}, function(){
-				queryDetails(world.id, 8, sockets, function(row){
+				queryDetails(world.id, 8, function(row){
 					details[+row.FactionId].push(+row.RegionId);
 				}, function(){
 					var total = details[1].length + details[2].length + details[3].length;
@@ -164,9 +151,9 @@ var updateDetails = function(world, data){
 						1: (details[1].length / total) * 100,
 						2: (details[2].length / total) * 100,
 						3: (details[3].length / total) * 100
-					}
+					};
 
-					sockets.broadcast({details: world.details, id: world.id});
+					wss.broadcast({details: world.details, id: world.id});
 				});
 			});
 		});
@@ -175,42 +162,42 @@ var updateDetails = function(world, data){
 
 		if(event.zone == 0){
 			var facilities = facilityData[event.type];
-			queryDetails(world.id, 2, sockets, function(row){
+			queryDetails(world.id, 2, function(row){
 				var facility = facilities[2][+row.RegionId];
 				if(facility)
 					world.details[+row.FactionId].push(facility);
 			}, function(){
-				queryDetails(world.id, 6, sockets, function(row){
+				queryDetails(world.id, 6, function(row){
 					var facility = facilities[6][+row.RegionId];
 					if(facility)
 						world.details[+row.FactionId].push(facility);
 				}, function(){
-					queryDetails(world.id, 8, sockets, function(row){
+					queryDetails(world.id, 8, function(row){
 						var facility = facilities[8][+row.RegionId];
 						if(facility)
 							world.details[+row.FactionId].push(facility);
 					}, function(){
-						sockets.broadcast({details: world.details, id: world.id});
+						wss.broadcast({details: world.details, id: world.id});
 					});
 				});
 			});
 		} else {
 			var facilities = facilityData[event.type][event.zone];
-			queryDetails(world.id, event.zone, sockets, function(row){
+			queryDetails(world.id, event.zone, function(row){
 				var facility = facilities[+row.RegionId];
 				if(facility)
 					world.details[+row.FactionId].push(facility);
 			}, function(){
-				sockets.broadcast({details: world.details, id: world.id});
+				wss.broadcast({details: world.details, id: world.id});
 			});
 		}
 	}
-}
+};
 
 var updateWorld = function(world){
 	query('world_event?world_id=' + world.id + '&type=METAGAME', function(result, error){
 		if(error){
-			sockets.broadcast(result);
+			wss.broadcast(result);
 		} else {
 			if(!result.world_event_list)
 				return;
@@ -233,22 +220,22 @@ var updateWorld = function(world){
 				} else {
 					world.active = false;
 					delete world.details;
-				}
+				};
 
 				world.eventID = eventID;
-				sockets.broadcast({world: world});
-			}
+				wss.broadcast({world: world});
+			};
 
 			if(world.active)
 				updateDetails(world, data);
 		}
 	});
-}
+};
 
 var update = function(){
 	query('world?c:limit=100', function(result, error){
 		if(error){
-			sockets.broadcast(result);
+			wss.broadcast(result);
 		} else {
 			for(var index = 0; index < result.world_list.length; index++){
 				var data = result.world_list[index];
@@ -256,8 +243,8 @@ var update = function(){
 				if(world){
 					if(data.state != world.state){
 						world.state = data.state;
-						sockets.broadcast({world: world});
-					}
+						wss.broadcast({world: world});
+					};
 
 					if(data.state == 'online')
 						updateWorld(world);
@@ -265,6 +252,6 @@ var update = function(){
 			}
 		}
 	});
-}
+};
 
 update();
