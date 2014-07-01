@@ -2,7 +2,7 @@ var debugging = true;
 var print = function(){
 	if(debugging)
 		console.log(Array.prototype.join.call(arguments, ' '));
-}
+};
 
 var app = require('express')();
 app.get('/', function(request, response){
@@ -61,7 +61,7 @@ var alerts = {
 var warpgates = [
 	1000, 1001, 1002, 1003, 1004, 1005, 2201, 2202, 2203, // Indar
 	6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009, // Amerish
-	18029, 18030, 18031, 18039, 18040, 18041, 18042, 18043, 18044, // Esamir
+	18029, 18030, 18031, 18039, 18040, 18041, 18042, 18043, 18044 // Esamir
 ];
 
 var facilities = {
@@ -145,7 +145,7 @@ var updateAlerts = function(data){
 			delete alert[member];
 
 		alert.active = false;
-	};
+	}
 
 	wss.broadcast({alert: alert, id: id});
 };
@@ -168,7 +168,7 @@ var updateWorldState = function(init){
 					world.state = data.state;
 
 					wss.broadcast({state: data.state, id: id});
-				};
+				}
 
 				if(data.state == 'online' && init)
 					pollAlerts(id);
