@@ -79,7 +79,8 @@ var facilities = {
 var query = function(params, callback){
 	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
 		if(response.statusCode != 200){
-			print('[query1] params:', params, '-', response.statusCode, 'headers:', response.headers);
+			print('[query ERR2] params:', params, '-', response.statusCode);
+
 			setTimeout(function(){
 				query(params, callback);
 			}, 30000);
@@ -94,7 +95,8 @@ var query = function(params, callback){
 			});
 		}
 	}).on('error', function(error){
-		print('[query2] params:', params, '-', error.message);
+		print('[query ERR2] params:', params, '-', error.message);
+
 		setTimeout(function(){
 			query(params, callback);
 		}, 30000);
@@ -103,6 +105,8 @@ var query = function(params, callback){
 
 var updateAlertDetails = function(id, alert){
 	var details = worlds[id].details;
+
+	print('[updateAlertDetails] world:', id, 'type:', alert.type, 'zone:', alert.zone);
 
 	query('map?zone_ids=' + alert.zone + '&world_id=' + id, function(result){
 		for(var array in details)
@@ -131,13 +135,13 @@ var updateAlerts = function(data){
 	var id = +data.world_id;
 	var alert = worlds[id].alert;
 
-	print('[updateAlerts1] alert', data.metagame_event_state_name, 'on world', id);
+	print('[updateAlerts] alert', data.metagame_event_state_name, 'on world', id);
 
 	var state = +data.metagame_event_state;
 	if(state == 135 || state == 136){
 		var details = alerts[+data.metagame_event_id];
 		if(!details)
-			return print('[updateAlerts2] missing details', id, +data.metagame_event_id);
+			return print('[updateAlerts ERR] missing details', id, +data.metagame_event_id);
 
 		alert.active = true;
 		alert.type = details.type;
@@ -250,6 +254,8 @@ var facilityToRegion = {
 
 var ws = new WebSocket('wss://push.planetside2.com/streaming?service-id=s:ps2alerts');
 ws.on('open', function(){
+	print('[ws] connected');
+
 	ws.send(JSON.stringify({
 		service: 'event',
 		action: 'subscribe',
@@ -288,4 +294,8 @@ ws.on('message', function(data){
 			wss.broadcast({details: details, id: id});
 		}
 	}
+});
+
+ws.on('close', function(){
+	print('[ws] DISCONNECTED!');
 });
