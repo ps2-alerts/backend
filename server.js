@@ -36,26 +36,29 @@ for(var index in worlds){
 	world.id = index;
 	world.state = '';
 	world.active = false;
-	world.eventID = 0;
 	world.alert = {};
 };
 
-var events = [
-	{zone: 2, type: 0},
-	{zone: 8, type: 0},
-	{zone: 6, type: 0},
-	{zone: 0, type: 1},
-	{zone: 0, type: 2},
-	{zone: 0, type: 3},
-	{zone: 6, type: 1},
-	{zone: 6, type: 2},
-	{zone: 6, type: 3},
-	{zone: 2, type: 1},
-	{zone: 2, type: 2},
-	{zone: 2, type: 3},
-	{zone: 8, type: 1},
-	{zone: 8, type: 3}
-];
+var alerts = {
+	1: {zone: 2, type: 0},
+	2: {zone: 8, type: 0},
+	3: {zone: 6, type: 0},
+
+	4: {zone: 0, type: 1},
+	5: {zone: 0, type: 2},
+	6: {zone: 0, type: 3},
+
+	7: {zone: 6, type: 1},
+	8: {zone: 6, type: 2},
+	9: {zone: 6, type: 3},
+
+	10: {zone: 2, type: 1},
+	11: {zone: 2, type: 2},
+	12: {zone: 2, type: 3},
+
+	13: {zone: 8, type: 1},
+	14: {zone: 8, type: 3}
+};
 
 var eventNames = [
 	'Territory',
@@ -69,13 +72,6 @@ var zoneNames = {
 	2: 'Indar',
 	6: 'Amerish',
 	8: 'Esamir'
-};
-
-var eventIDs = {
-	135: true, // started
-	136: true, // restarted
-	137: false, // canceled
-	138: false // finished
 };
 
 var facilityData = {
@@ -133,7 +129,7 @@ var queryDetails = function(id, zone, callback, finalize){
 };
 
 var updateDetails = function(world, data){
-	var event = events[+data.metagame_event_id - 1];
+	var event = alerts[+data.metagame_event_id];
 	if(event.type == 0){
 		var details = {1: [], 2: [], 3: []};
 
@@ -194,64 +190,75 @@ var updateDetails = function(world, data){
 	}
 };
 
-var updateWorld = function(world){
-	query('world_event?world_id=' + world.id + '&type=METAGAME', function(result, error){
-		if(error){
-			wss.broadcast(result);
-		} else {
-			if(!result.world_event_list)
-				return;
+var updateAlerts = function(data){
+	var id = +data.world_id;
+	var world = worlds[id];
 
-			var data = result.world_event_list[0];
-
-			var eventID = +data.metagame_event_state;
-			if(eventID != world.eventID){
-				if(eventIDs[eventID]){
-					var event = events[+data.metagame_event_id - 1];
-					world.active = true;
-					world.alert = {
-						start: +(data.timestamp + '000'),
-						type: event.type,
-						zone: event.zone,
-						eventName: eventNames[event.type],
-						zoneName: zoneNames[event.zone],
-						duration: (+data.metagame_event_id > 6) ? 1 : 2
-					}
-				} else {
-					world.active = false;
-					delete world.details;
-				};
-
-				world.eventID = eventID;
-				wss.broadcast({world: world});
-			};
-
-			if(world.active)
-				updateDetails(world, data);
+	var state = +data.metagame_event_state;
+	if(state == 135 || state == 136){
+		var details = alerts[+data.metagame_event_id];
+		world.active = true;
+		world.alert = {
+			type: details.type,
+			zone: details.zone,
+			eventName: eventNames[details.type],
+			zoneName: zoneNames[details.zone],
+			start: +(data.timestamp + '000'),
+			duration: (+data.metagame_event_id > 6) ? 1 : 2
 		}
+
+		updateDetails(world, data);
+	} else {
+		world.active = false
+		delete world.details;
+	};
+
+	wss.broadcast({world: world});
+};
+
+var pollAlerts = function(id){
+	query('world_event?type=METAGAME&world_id=' + id, function(result, error){
+		if(!error)
+			updateAlerts(result.world_event_list[0]);
+		else
+			wss.broadcast(result);
 	});
 };
 
-var update = function(){
+var updateWorldState = function(init){
 	query('world?c:limit=100', function(result, error){
-		if(error){
-			wss.broadcast(result);
-		} else {
+		if(!error){
 			for(var index = 0; index < result.world_list.length; index++){
 				var data = result.world_list[index];
-				var world = worlds[+data.world_id];
+				var id = +data.world_id;
+
+				var world = worlds[id];
 				if(world){
 					if(data.state != world.state){
 						world.state = data.state;
-						wss.broadcast({world: world});
+
+						wss.broadcast({state: data.state, id: id});
 					};
 
-					if(data.state == 'online')
-						updateWorld(world);
+					if(data.state == 'online' && init)
+						pollAlerts(id);
 				}
 			}
+		} else {
+			wss.broadcast(result);
 		}
 	});
 };
 
-update();
+updateWorldState(true);
+
+var ws = new WebSocket('wss://push.planetside2.com/streaming?service-id=s:ps2alerts');
+
+ws.on('message', function(data){
+	var payload = JSON.parse(data).payload;
+	if(!payload)
+		return;
+
+	if(payload.event_name == 'MetagameEvent')
+		updateAlerts(payload);
+});
