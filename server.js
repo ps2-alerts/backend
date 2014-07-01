@@ -171,6 +171,7 @@ var updateWorldState = function(init){
 };
 
 updateWorldState(true);
+setInterval(updateWorldState, 600000);
 
 var ws = new WebSocket('wss://push.planetside2.com/streaming?service-id=s:ps2alerts');
 
