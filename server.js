@@ -31,6 +31,7 @@ setInterval(function(){
 		wss.clients[index - 1].send('ping');
 }, 30000);
 
+// https://gist.github.com/p3lim/a46348651daea5c08895#servers---census
 var worlds = {
 	1: {alert: {}, details: {1: [], 2: [], 3: []}},  // Connery
 	9: {alert: {}, details: {1: [], 2: [], 3: []}},  // Woodman
@@ -41,6 +42,7 @@ var worlds = {
 	25: {alert: {}, details: {1: [], 2: [], 3: []}}  // Briggs
 };
 
+// https://gist.github.com/p3lim/a46348651daea5c08895#alerts---census
 var alerts = {
 	1: {zone: 2, type: 0},  // Indar Territory
 	2: {zone: 8, type: 0},  // Esamir Territory
@@ -58,12 +60,14 @@ var alerts = {
 	14: {zone: 8, type: 2}  // Esamir Amp Station
 };
 
+// https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
 var warpgates = [
 	1000, 1001, 1002, 1003, 1004, 1005, 2201, 2202, 2203, // Indar
 	6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009, // Amerish
 	18029, 18030, 18031, 18039, 18040, 18041, 18042, 18043, 18044 // Esamir
 ];
 
+// https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
 var facilities = {
 	2: {2: [2105, 2107, 2109], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]},
 	3: {2: [2103, 2104, 2106], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
@@ -180,6 +184,7 @@ var updateWorldState = function(init){
 updateWorldState(true);
 setInterval(updateWorldState, 600000);
 
+// https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
 var facilityToRegion = {
 	// Indar
 	3400:18044, 3201:2107, 118000:2105, 4001:2109, 3801:2103, 3601:2104, 7500:2106, 4401:2101,
