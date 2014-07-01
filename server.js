@@ -21,21 +21,13 @@ wss.broadcast = function(data){
 };
 
 var worlds = {
-	1: {name: 'Connery'},
-	9: {name: 'Woodman'},
-	10: {name: 'Miller'},
-	11: {name: 'Ceres'},
-	13: {name: 'Cobalt'},
-	17: {name: 'Emerald'},
-	25: {name: 'Briggs'}
-};
-
-for(var index in worlds){
-	var world = worlds[index];
-	world.id = index;
-	world.state = '';
-	world.active = false;
-	world.alert = {};
+	1: {alert: {}, details: {1: [], 2: [], 3: []}},  // Connery
+	9: {alert: {}, details: {1: [], 2: [], 3: []}},  // Woodman
+	10: {alert: {}, details: {1: [], 2: [], 3: []}}, // Miller
+	11: {alert: {}, details: {1: [], 2: [], 3: []}}, // Ceres
+	13: {alert: {}, details: {1: [], 2: [], 3: []}}, // Cobalt
+	17: {alert: {}, details: {1: [], 2: [], 3: []}}, // Emerald
+	25: {alert: {}, details: {1: [], 2: [], 3: []}}  // Briggs
 };
 
 var alerts = {
@@ -55,35 +47,10 @@ var alerts = {
 	14: {zone: 8, type: 3}
 };
 
-var eventNames = [
-	'Territory',
-	'Bio Labs',
-	'Tech Plants',
-	'Amp Stations'
-];
-
-var zoneNames = {
-	2: 'Indar',
-	6: 'Amerish',
-	8: 'Esamir'
-};
-
 var facilityData = {
-	1: {
-		2: {2103: 'Allatum', 2104: 'Saurva', 2106: 'Rashnu'},
-		6: {6102: 'Ikanam', 6113: 'Onatha', 6123: 'Xelas'},
-		8: {18022: 'Andvari', 18026: 'Mani', 18028: 'Ymir'}
-	},
-	2: {
-		2: {2101: 'Hvar', 2102: 'Mao', 2108: 'Tawrich'},
-		6: {6103: 'Heyoka', 6112: 'Mekala', 6122: 'Tumas'},
-		8: {18025: 'Eisa'}
-	},
-	3: {
-		2: {2105: 'Peris', 2107: 'Dahaka', 2109: 'Zurvan'},
-		6: {6101: 'Kwahtee', 6111: 'Sungrey', 6121: 'Wokuk'},
-		8: {18023: 'Elli', 18024: 'Freyr', 18027: 'Nott'}
-	}
+	1: {2: [2103, 2104, 2106], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
+	2: {2: [2101, 2102, 2108], 6: [6103, 6112, 6122], 8: [18025]},
+	3: {2: [2105, 2107, 2109], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]}
 };
 
 var query = function(params, callback){
@@ -122,60 +89,58 @@ var queryDetails = function(id, zone, callback, finalize){
 	});
 };
 
-var updateAlertDetails = function(world, data){
-	var event = alerts[+data.metagame_event_id];
-	if(event.type == 0){
-		var details = {1: [], 2: [], 3: []};
-		queryDetails(world.id, event.zone, function(row){
-			details[+row.FactionId].push(+row.RegionId);
-		}, function(){
-			var total = details[1].length + details[2].length + details[3].length;
-			world.details = {
-				1: (details[1].length / total) * 100,
-				2: (details[2].length / total) * 100,
-				3: (details[3].length / total) * 100
-			};
+var updateAlertDetails = function(id, alert){
+	var details = worlds[id].details;
 
-			wss.broadcast({details: world.details, id: world.id});
+	for(var array in details)
+		details[array].length = 0;
+
+	if(!alert.type){
+		var temp = {1: [], 2: [], 3: []};
+		queryDetails(id, alert.zone, function(row){
+			temp[+row.FactionId].push(+row.RegionId);
+		}, function(){
+			var total = temp[1].length + temp[2].length + temp[3].length;
+			details[1].push((temp[1].length / total) * 100);
+			details[2].push((temp[2].length / total) * 100);
+			details[3].push((temp[3].length / total) * 100);
+
+			wss.broadcast({details: details, id: id});
 		});
 	} else {
-		world.details = {1: [], 2: [], 3: []};
-
-		var facilities = facilityData[event.type][event.zone];
-		queryDetails(world.id, event.zone, function(row){
+		var facilities = facilityData[alert.type][alert.zone];
+		queryDetails(id, alert.zone, function(row){
 			var facility = facilities[+row.RegionId];
 			if(facility)
-				world.details[+row.FactionId].push(facility);
+				details[+row.FactionId].push(facility);
 		}, function(){
-			wss.broadcast({details: world.details, id: world.id});
+			wss.broadcast({details: details, id: id});
 		});
 	}
 };
 
 var updateAlerts = function(data){
 	var id = +data.world_id;
-	var world = worlds[id];
+	var alert = worlds[id].alert;
 
 	var state = +data.metagame_event_state;
 	if(state == 135 || state == 136){
 		var details = alerts[+data.metagame_event_id];
-		world.active = true;
-		world.alert = {
-			type: details.type,
-			zone: details.zone,
-			eventName: eventNames[details.type],
-			zoneName: zoneNames[details.zone],
-			start: +(data.timestamp + '000'),
-			duration: (+data.metagame_event_id > 6) ? 1 : 2
-		}
+		alert.active = true;
+		alert.type = details.type;
+		alert.zone = details.zone;
+		alert.start = +(data.timestamp + '000');
+		alert.duration = (+data.metagame_event_id > 6) ? 1 : 2;
 
-		updateDetails(world, data);
+		updateAlertDetails(id, alert);
 	} else {
-		world.active = false
-		delete world.details;
+		for(var member in alert)
+			delete alert[member];
+
+		alert.active = false;
 	};
 
-	wss.broadcast({world: world});
+	wss.broadcast({alert: alert, id: id});
 };
 
 var pollAlerts = function(id){
