@@ -66,9 +66,11 @@ var facilities = {
 
 var query = function(params, callback){
 	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
-		if(response.statusCode != 200)
-			callback({error: {statusCode: response.statusCode, headers: response.headers}}, true);
-		else {
+		if(response.statusCode != 200){
+			setTimeout(function(){
+				query(params, callback);
+			}, 30000);
+		} else {
 			var result = '';
 			response.on('data', function(chunk){
 				result += chunk;
@@ -78,37 +80,36 @@ var query = function(params, callback){
 				callback(JSON.parse(result));
 			});
 		}
-	}).on('error', function(e){
-		callback({error: e.message}, true);
+	}).on('error', function(){
+		setTimeout(function(){
+			query(params, callback);
+		}, 30000);
 	});
 };
 
 var updateAlertDetails = function(id, alert){
 	var details = worlds[id].details;
 
-	query('map?zone_ids=' + alert.zone + '&world_id=' + id, function(result, error){
-		if(!error){
-			for(var array in details)
-				details[array].length = 0;
+	query('map?zone_ids=' + alert.zone + '&world_id=' + id, function(result){
+		for(var array in details)
+			details[array].length = 0;
 
-			var rows = result.map_list[0].Regions.Row;
-			if(!alert.type){
-				for(var index = 0; index < rows.length; index++){
-					var row = rows[index].RowData;
-					if(warpgates.indexOf(+row.RegionId) == -1)
-						details[+row.FactionId].push(+row.RegionId);
-				}
-			} else {
-				for(var index = 0; index < rows.length; index++){
-					var row = rows[index].RowData;
-					if(facilities[alert.type][alert.zone].indexOf(+row.RegionId) != -1)
-						details[+row.FactionId].push(+row.RegionId);
-				}
+		var rows = result.map_list[0].Regions.Row;
+		if(!alert.type){
+			for(var index = 0; index < rows.length; index++){
+				var row = rows[index].RowData;
+				if(warpgates.indexOf(+row.RegionId) == -1)
+					details[+row.FactionId].push(+row.RegionId);
 			}
+		} else {
+			for(var index = 0; index < rows.length; index++){
+				var row = rows[index].RowData;
+				if(facilities[alert.type][alert.zone].indexOf(+row.RegionId) != -1)
+					details[+row.FactionId].push(+row.RegionId);
+			}
+		}
 
-			wss.broadcast({details: details, id: id});
-		} else
-			wss.broadcast(result);
+		wss.broadcast({details: details, id: id});
 	});
 };
 
@@ -137,35 +138,28 @@ var updateAlerts = function(data){
 };
 
 var pollAlerts = function(id){
-	query('world_event?type=METAGAME&world_id=' + id, function(result, error){
-		if(!error)
-			updateAlerts(result.world_event_list[0]);
-		else
-			wss.broadcast(result);
+	query('world_event?type=METAGAME&world_id=' + id, function(result){
+		updateAlerts(result.world_event_list[0]);
 	});
 };
 
 var updateWorldState = function(init){
-	query('world?c:limit=100', function(result, error){
-		if(!error){
-			for(var index = 0; index < result.world_list.length; index++){
-				var data = result.world_list[index];
-				var id = +data.world_id;
+	query('world?c:limit=100', function(result){
+		for(var index = 0; index < result.world_list.length; index++){
+			var data = result.world_list[index];
+			var id = +data.world_id;
 
-				var world = worlds[id];
-				if(world){
-					if(data.state != world.state){
-						world.state = data.state;
+			var world = worlds[id];
+			if(world){
+				if(data.state != world.state){
+					world.state = data.state;
 
-						wss.broadcast({state: data.state, id: id});
-					};
+					wss.broadcast({state: data.state, id: id});
+				};
 
-					if(data.state == 'online' && init)
-						pollAlerts(id);
-				}
+				if(data.state == 'online' && init)
+					pollAlerts(id);
 			}
-		} else {
-			wss.broadcast(result);
 		}
 	});
 };
