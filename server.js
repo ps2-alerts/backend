@@ -181,6 +181,14 @@ updateWorldState(true);
 setInterval(updateWorldState, 600000);
 
 var ws = new WebSocket('wss://push.planetside2.com/streaming?service-id=s:ps2alerts');
+ws.on('open', function(){
+	ws.send(JSON.stringify({
+		service: 'event',
+		action: 'subscribe',
+		worlds: ['1', '9', '10', '11', '13', '17', '25'],
+		eventNames: ['MetagameEvent']
+	}));
+});
 
 ws.on('message', function(data){
 	var payload = JSON.parse(data).payload;
