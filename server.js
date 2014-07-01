@@ -31,20 +31,20 @@ var worlds = {
 };
 
 var alerts = {
-	1: {zone: 2, type: 0},
-	2: {zone: 8, type: 0},
-	3: {zone: 6, type: 0},
+	1: {zone: 2, type: 0},  // Indar Territory
+	2: {zone: 8, type: 0},  // Esamir Territory
+	3: {zone: 6, type: 0},  // Amerish Territory
 
-	7: {zone: 6, type: 1},
-	8: {zone: 6, type: 2},
-	9: {zone: 6, type: 3},
+	7: {zone: 6, type: 3},  // Amerish Biolab
+	8: {zone: 6, type: 4},  // Amerish Tech Plant
+	9: {zone: 6, type: 2},  // Amerish Amp Station
 
-	10: {zone: 2, type: 1},
-	11: {zone: 2, type: 2},
-	12: {zone: 2, type: 3},
+	10: {zone: 2, type: 3}, // Indar Biolab
+	11: {zone: 2, type: 4}, // Indar Tech Plant
+	12: {zone: 2, type: 2}, // Indar Amp Station
 
-	13: {zone: 8, type: 1},
-	14: {zone: 8, type: 3}
+	13: {zone: 8, type: 3}, // Esamir Biolab
+	14: {zone: 8, type: 2}  // Esamir Amp Station
 };
 
 var warpgates = [
@@ -54,9 +54,9 @@ var warpgates = [
 ];
 
 var facilities = {
-	1: {2: [2103, 2104, 2106], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
-	2: {2: [2101, 2102, 2108], 6: [6103, 6112, 6122], 8: [18025]},
-	3: {2: [2105, 2107, 2109], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]}
+	2: {2: [2105, 2107, 2109], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]},
+	3: {2: [2103, 2104, 2106], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
+	4: {2: [2101, 2102, 2108], 6: [6103, 6112, 6122], 8: [18025]}
 };
 
 var query = function(params, callback){
