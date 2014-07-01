@@ -1,3 +1,9 @@
+var debugging = true;
+var print = function(){
+	if(debugging)
+		console.log(Array.prototype.join.call(arguments, ' '));
+}
+
 var app = require('express')();
 app.get('/', function(request, response){
 	response.redirect('http://p3lim.github.io/ps2-alerts');
@@ -67,6 +73,7 @@ var facilities = {
 var query = function(params, callback){
 	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
 		if(response.statusCode != 200){
+			print('[query1] params:', params, '-', response.statusCode, 'headers:', response.headers);
 			setTimeout(function(){
 				query(params, callback);
 			}, 30000);
@@ -80,7 +87,8 @@ var query = function(params, callback){
 				callback(JSON.parse(result));
 			});
 		}
-	}).on('error', function(){
+	}).on('error', function(error){
+		print('[query2] params:', params, '-', error.message);
 		setTimeout(function(){
 			query(params, callback);
 		}, 30000);
@@ -117,9 +125,14 @@ var updateAlerts = function(data){
 	var id = +data.world_id;
 	var alert = worlds[id].alert;
 
+	print('[updateAlerts1] alert', data.metagame_event_state_name, 'on world', id);
+
 	var state = +data.metagame_event_state;
 	if(state == 135 || state == 136){
 		var details = alerts[+data.metagame_event_id];
+		if(!details)
+			return print('[updateAlerts2] missing details', id, +data.metagame_event_id);
+
 		alert.active = true;
 		alert.type = details.type;
 		alert.zone = details.zone;
