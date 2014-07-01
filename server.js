@@ -47,7 +47,13 @@ var alerts = {
 	14: {zone: 8, type: 3}
 };
 
-var facilityData = {
+var warpgates = [
+	1000, 1001, 1002, 1003, 1004, 1005, 2201, 2202, 2203, // Indar
+	6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009, // Amerish
+	18029, 18030, 18031, 18039, 18040, 18041, 18042, 18043, 18044, // Esamir
+];
+
+var facilities = {
 	1: {2: [2103, 2104, 2106], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
 	2: {2: [2101, 2102, 2108], 6: [6103, 6112, 6122], 8: [18025]},
 	3: {2: [2105, 2107, 2109], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]}
@@ -72,51 +78,33 @@ var query = function(params, callback){
 	});
 };
 
-var queryDetails = function(id, zone, callback, finalize){
-	query('map?world_id=' + id + '&zone_ids=' + zone, function(result, error){
-		if(error){
-			wss.broadcast(result);
-		} else {
-			if(result.map_list && result.map_list[0]){
-				var rows = result.map_list[0].Regions.Row;
-				for(var index = 0; index < rows.length; index++)
-					callback(rows[index].RowData);
-
-				if(finalize)
-					finalize();
-			}
-		}
-	});
-};
-
 var updateAlertDetails = function(id, alert){
 	var details = worlds[id].details;
 
-	for(var array in details)
-		details[array].length = 0;
+	query('map?zone_ids=' + alert.zone + '&world_id=' + id, function(result, error){
+		if(!error){
+			for(var array in details)
+				details[array].length = 0;
 
-	if(!alert.type){
-		var temp = {1: [], 2: [], 3: []};
-		queryDetails(id, alert.zone, function(row){
-			temp[+row.FactionId].push(+row.RegionId);
-		}, function(){
-			var total = temp[1].length + temp[2].length + temp[3].length;
-			details[1].push((temp[1].length / total) * 100);
-			details[2].push((temp[2].length / total) * 100);
-			details[3].push((temp[3].length / total) * 100);
+			var rows = result.map_list[0].Regions.Row;
+			if(!alert.type){
+				for(var index = 0; index < rows.length; index++){
+					var row = rows[index].RowData;
+					if(warpgates.indexOf(+row.RegionId) == -1)
+						details[+row.FactionId].push(+row.RegionId);
+				}
+			} else {
+				for(var index = 0; index < rows.length; index++){
+					var row = rows[index].RowData;
+					if(facilities[alert.type][alert.zone].indexOf(+row.RegionId) != -1)
+						details[+row.FactionId].push(+row.RegionId);
+				}
+			}
 
 			wss.broadcast({details: details, id: id});
-		});
-	} else {
-		var facilities = facilityData[alert.type][alert.zone];
-		queryDetails(id, alert.zone, function(row){
-			var facility = facilities[+row.RegionId];
-			if(facility)
-				details[+row.FactionId].push(facility);
-		}, function(){
-			wss.broadcast({details: details, id: id});
-		});
-	}
+		} else
+			wss.broadcast(result);
+	});
 };
 
 var updateAlerts = function(data){
