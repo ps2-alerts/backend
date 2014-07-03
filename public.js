@@ -75,7 +75,8 @@ var facilityNames = {
 };
 
 var updateTime = function(){
-	var now = Date.now();
+	var now = new Date();
+	now.setSeconds(now.getSeconds()  + 4);
 
 	for(var id in worlds){
 		var alert = worlds[id].alert;
