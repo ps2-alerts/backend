@@ -91,7 +91,12 @@ var query = function(params, callback){
 			});
 
 			response.on('end', function(){
-				callback(JSON.parse(result));
+				try {
+					var obj = JSON.parse(result);
+					callback(obj);
+				} catch(error){
+					print('[query ERR3] params:', params, '-', error.message);
+				}
 			});
 		}
 	}).on('error', function(error){
