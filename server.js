@@ -300,4 +300,12 @@ ws.on('message', function(data){
 
 ws.on('close', function(){
 	print('[ws] DISCONNECTED!');
+
+	setTimeout(function(){
+		print('[ws] RECONNECTING');
+
+		ws = new WebSocket('wss://push.planetside2.com/streaming?service-id=s:ps2alerts');
+
+		updateWorldState(true);
+	}, 30000);
 });
