@@ -34,9 +34,7 @@ setInterval(function(){
 // https://gist.github.com/p3lim/a46348651daea5c08895#servers---census
 var worlds = {
 	1: {alert: {}, details: {1: [], 2: [], 3: []}},  // Connery
-	9: {alert: {}, details: {1: [], 2: [], 3: []}},  // Woodman
 	10: {alert: {}, details: {1: [], 2: [], 3: []}}, // Miller
-	11: {alert: {}, details: {1: [], 2: [], 3: []}}, // Ceres
 	13: {alert: {}, details: {1: [], 2: [], 3: []}}, // Cobalt
 	17: {alert: {}, details: {1: [], 2: [], 3: []}}, // Emerald
 	25: {alert: {}, details: {1: [], 2: [], 3: []}}  // Briggs
@@ -44,21 +42,10 @@ var worlds = {
 
 // https://gist.github.com/p3lim/a46348651daea5c08895#alerts---census
 var alerts = {
-	1: {zone: 2, type: 0},  // Indar Territory
-	2: {zone: 8, type: 0},  // Esamir Territory
-	3: {zone: 6, type: 0},  // Amerish Territory
-	4: {zone: 4, type: 0},  // Hossin Territory
-
-	7: {zone: 6, type: 3},  // Amerish Biolab
-	8: {zone: 6, type: 4},  // Amerish Tech Plant
-	9: {zone: 6, type: 2},  // Amerish Amp Station
-
-	10: {zone: 2, type: 3}, // Indar Biolab
-	11: {zone: 2, type: 4}, // Indar Tech Plant
-	12: {zone: 2, type: 2}, // Indar Amp Station
-
-	13: {zone: 8, type: 3}, // Esamir Biolab
-	14: {zone: 8, type: 2}  // Esamir Amp Station
+	31: 2, // Indar Territory
+	32: 8, // Esamir Territory
+	33: 6, // Amerish Territory
+	34: 4  // Hossin Territory
 };
 
 // https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
@@ -68,13 +55,6 @@ var warpgates = [
 	6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009, // Amerish
 	18029, 18030, 18031, 18039, 18040, 18041, 18042, 18043, 18044 // Esamir
 ];
-
-// https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
-var facilities = {
-	2: {2: [2105, 2107, 2109], 4: [4140, 4150, 4160], 6: [6101, 6111, 6121], 8: [18023, 18024, 18027]},
-	3: {2: [2103, 2104, 2106], 4: [4170, 4180, 4190], 6: [6102, 6113, 6123], 8: [18022, 18026, 18028]},
-	4: {2: [2101, 2102, 2108], 4: [4200, 4210, 4220], 6: [6103, 6112, 6122], 8: [18025]}
-};
 
 var query = function(params, callback){
 	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
@@ -111,25 +91,17 @@ var query = function(params, callback){
 var updateAlertDetails = function(id, alert){
 	var details = worlds[id].details;
 
-	print('[updateAlertDetails] world:', id, 'type:', alert.type, 'zone:', alert.zone);
+	print('[updateAlertDetails] world:', id, 'zone:', alert.zone);
 
 	query('map?zone_ids=' + alert.zone + '&world_id=' + id, function(result){
 		for(var array in details)
 			details[array].length = 0;
 
 		var rows = result.map_list[0].Regions.Row;
-		if(!alert.type){
-			for(var index = 0; index < rows.length; index++){
-				var row = rows[index].RowData;
-				if(warpgates.indexOf(+row.RegionId) == -1)
-					details[+row.FactionId].push(+row.RegionId);
-			}
-		} else {
-			for(var index = 0; index < rows.length; index++){
-				var row = rows[index].RowData;
-				if(facilities[alert.type][alert.zone].indexOf(+row.RegionId) != -1)
-					details[+row.FactionId].push(+row.RegionId);
-			}
+		for(var index = 0; index < rows.length; index++){
+			var row = rows[index].RowData;
+			if(warpgates.indexOf(+row.RegionId) == -1)
+				details[+row.FactionId].push(+row.RegionId);
 		}
 
 		wss.broadcast({details: details, id: id});
@@ -144,15 +116,9 @@ var updateAlerts = function(data){
 
 	var state = +data.metagame_event_state;
 	if(state == 135 || state == 136){
-		var details = alerts[+data.metagame_event_id];
-		if(!details)
-			return print('[updateAlerts ERR] missing details', id, +data.metagame_event_id);
-
 		alert.active = true;
-		alert.type = details.type;
-		alert.zone = details.zone;
+		alert.zone = alerts[+data.metagame_event_id];
 		alert.start = +(data.timestamp + '000');
-		alert.duration = (+data.metagame_event_id > 6) ? 1 : 2;
 
 		updateAlertDetails(id, alert);
 	} else {
@@ -261,7 +227,7 @@ ws.on('open', function(){
 	ws.send(JSON.stringify({
 		service: 'event',
 		action: 'subscribe',
-		worlds: ['1', '9', '10', '11', '13', '17', '25'],
+		worlds: ['1', '10', '13', '17', '25'],
 		eventNames: ['MetagameEvent', 'FacilityControl']
 	}));
 });
