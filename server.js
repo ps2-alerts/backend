@@ -42,10 +42,10 @@ var worlds = {
 
 // https://gist.github.com/p3lim/a46348651daea5c08895#alerts---census
 var alerts = {
-	31: 2, // Indar Territory
-	32: 8, // Esamir Territory
-	33: 6, // Amerish Territory
-	34: 4  // Hossin Territory
+	1: 2, // Indar Territory
+	2: 8, // Esamir Territory
+	3: 6, // Amerish Territory
+	4: 4  // Hossin Territory
 };
 
 // https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
