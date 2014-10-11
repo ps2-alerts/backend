@@ -45,7 +45,11 @@ var alerts = {
 	1: 2, // Indar Territory
 	2: 8, // Esamir Territory
 	3: 6, // Amerish Territory
-	4: 4  // Hossin Territory
+	4: 4, // Hossin Territory
+	51: 2, // Indar Pumpkin Hunt
+	52: 8, // Esamir Pumpkin Hunt
+	53: 6, // Amerish Pumpkin Hunt
+	54: 4, // Hossin Pumpkin Hunt
 };
 
 // https://gist.github.com/p3lim/a46348651daea5c08895#zonefacility-names--other-details
@@ -114,11 +118,15 @@ var updateAlerts = function(data){
 
 	print('[updateAlerts] alert', data.metagame_event_state_name, 'on world', id);
 
+	var eventID = +data.metagame_event_id;
 	var state = +data.metagame_event_state;
 	if(state == 135 || state == 136){
 		alert.active = true;
-		alert.zone = alerts[+data.metagame_event_id];
+		alert.zone = alerts[eventID];
 		alert.start = +(data.timestamp + '000');
+
+		if(eventID > 4)
+			alert.specialEventID = eventID;
 
 		updateAlertDetails(id, alert);
 	} else {
