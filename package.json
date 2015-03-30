@@ -2,6 +2,10 @@
 	"name": "ps2-alerts",
 	"description": "Planetside 2 Alerts Monitor",
 	"version": "0.2.0",
+	"main": "server.js",
+	"scripts": {
+		"start": "node server.js"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/einaros/ws.git"
