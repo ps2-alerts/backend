@@ -61,7 +61,7 @@ var warpgates = [
 ];
 
 var query = function(params, callback){
-	http.get('http://census.soe.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
+	http.get('http://census.daybreakgames.com/s:ps2alerts/get/ps2:v2/' + params, function(response){
 		if(response.statusCode != 200){
 			print('[query ERR2] params:', params, '-', response.statusCode);
 
