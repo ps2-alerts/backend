@@ -11,7 +11,7 @@ app.get('/', function(request, response){
 
 var http = require('http');
 var server = http.createServer(app);
-server.listen(process.env.PORT || 5000);
+server.listen(8443);
 
 var WebSocket = require('ws');
 var WebSocketServer = WebSocket.Server;
