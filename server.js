@@ -6,7 +6,7 @@ var print = function(){
 
 var app = require('express')();
 app.get('/', function(request, response){
-	response.redirect('http://p3lim.github.io/ps2-alerts');
+	response.redirect('https://ps2-alerts.github.io');
 });
 
 var http = require('http');
